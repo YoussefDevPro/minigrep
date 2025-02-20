@@ -1,39 +1,15 @@
-use std::env;
-use std::fs;
-use std::io::prelude::*;
+use std::{env, fs, io::{Read}};
 
 fn main() {
-    let argues: Vec<String> = env::args().collect();
-    let (query, filename) = parse_config(&argues);
-    if query == "" && filename == "" {
+    let a = env::args().collect::<Vec<String>>();
+    let (q, f) = (a.get(1).map(|s| &s[..]).unwrap_or(""), a.get(2).map(|s| &s[..]).unwrap_or(""));
+    if q.is_empty() || f.is_empty() {
         println!("not enough arguments");
     } else {
-        println!("Searching for : {}", query);
-        let mut f = fs::File::open(filename)
-            .expect("file not found");
-        let mut contents = String::new();
-        f.read_to_string(&mut contents)
-            .expect("something went wrong when reading the file");
-        contents = truncate_content(&contents, 240);
-        println!("With text:\n{}", contents);
-    }
-}
-
-fn truncate_content(contents: &str, max_length: usize) -> String {
-    if contents.len() > max_length {
-        let truncated = &contents[..max_length.saturating_sub(3)];
-        format!("{}...", truncated)
-    } else {
-        contents.to_string()
-    }
-}
-
-fn parse_config(args: &[String]) -> (&str, &str) {
-    if args.len() < 3 {
-        ("", "")
-    } else {
-        let query = &args[1];
-        let filename = &args[2];
-        (query, filename)
+        let mut b = fs::File::open(f).unwrap_or_else(|_| panic!("file not found"));
+        let mut c = String::new();
+        b.read_to_string(&mut c).unwrap_or_else(|_| panic!("read error"));
+        println!("Searching for: {}", q);
+        println!("With text:\n{}", c.chars().take(240).collect::<String>().replace(&c[240..], "..."));
     }
 }
